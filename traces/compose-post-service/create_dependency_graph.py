@@ -2,25 +2,15 @@
 
 import os
 import json
+import glob
 from prettytable import PrettyTable
 
 filename = "2d93fdbc8ec71efe.json"
-
+############################################### UTILS ########################
 def file_to_json(filename):
     with open(filename, "rb") as f:
         json_data = json.load(f)
         return json_data
-
-spanid_map = {}
-ops = []
-root = ""
-total_duration = 0
-
-def spanid_to_opname(json_data):
-    for span in json_data["spans"]:
-        spanID = span["spanID"]
-        opName = span["operationName"]
-        spanid_map[spanID] = opName
 
 def print_operations(operations):
     t = PrettyTable(['OperationName', 'Parent', 'Idx', 'StartTime', 'EndTime', 'Duration',  'in_cp', 'cp', 'cp_dur', 'SelfDuration', 'Percentage'])
@@ -33,14 +23,119 @@ def print_contents(dictionary):
     print("Print contents:")
     for key, value in dictionary.items():
         print(key, " ", value)
+"""
+def print_dependency_graph(graph):
+    print("Dependency graph: \n")
+    for i in range(len(spanid_map)):
+        print(i, ":   ", end='')
+        for j in range(len(spanid_map)):
+            print(graph[i][j],"  ", end = '')
+        print("     ", ops[i], "\n")
+"""
+
+def print_critical_path_analytics(operations):
+    print("\n\n")
+    t = PrettyTable(['OperationName', 'SelfDuration', 'TotalDuration', 'Percentage'])
+    t.sortby = 'Percentage'
+    t.reversesort=True
+    for op, data in operations.items():
+        t.add_row([op, data["self_duration"], data["duration"], round(data["percent_dur"], 2)])
+        #print(op, "   self:  ", data["self_duration"] , "    Total: ", data["duration"], "    percentage: " , data["percent_dur"])
+    print(t)
+
+def get_starttime(op):
+    return operations[op]["start"]
+def get_endtime(op):
+    return operations[op]["end"]
+def get_duration(op):
+    return operations[op]["duration"]
+
+
+def spanid_to_opname(json_data):
+    global spanid_map, skip
+    spanid_map = {}
+    for span in json_data["spans"]:
+        spanID = span["spanID"]
+        opName = span["operationName"]
+        print(opName)
+        if (span["warnings"] is not None):
+            skip = 1
+            return 
+        spanid_map[spanID] = opName
+
+
+def dfs(operations, root):
+    global total_duration
+    for op in operations[root]["cp"]:
+        operations[op]["in_cp"] = 1
+        print(op,  " ", operations[op]["self_duration"], " ", total_duration)
+        total_duration += operations[op]["self_duration"]
+        dfs(operations, op)
+
+def print_op_cnts():
+    t = PrettyTable(['OperationName', 'Count'])
+    for op_name, cnt in op_cnt.items():
+        t.add_row([op_name, cnt])
+    print(t, "\n\n")
+
+def dump_omni_results():
+    filepath = "/users/chbandi/traces/omni_result.json"
+    with open(filepath, 'w') as file:
+        json_string = json.dumps(omni_results, default=lambda o: o.__dict__, indent=4)
+        file.write(json_string)
+################################################## 
+
+spanid_map = {}
+#ops = []
+root = ""
+total_duration = 0
+operations = {}
+omni_results = {}
+op_cnt = {}
+skip = 0
+
+
+def analyze_trace(filename):
+    global skip, operations
+    #Extract JSON data from the traces
+    skip = 0
+    json_data = file_to_json(filename)
+    print("Analyzing trace id: ", json_data["traceID"])
+    #construct spanid to operation name map
+    spanid_to_opname(json_data)
+    if skip:
+        return 
+    print_contents(spanid_map)
+
+    #Extract operation info
+    operations, root = retrieve_operations(json_data)
+
+    #Critical path analysis
+    critical_path_analysis(json_data, operations, root)
+    update_global_stats(json_data, operations)
+    print_operations(operations)
+    print_critical_path_analytics(operations)
+
+def analyze_traces():
+    read_files = glob.glob("*.json")
+    for f in read_files:
+        global spanid_map, root, total_duration
+        spanid_map = {}
+        root = ""
+        total_duration = 0
+        analyze_trace(f)
+    print_op_cnts()
+    dump_omni_results()
 
 def retrieve_operations(json_data):
+    global operations, spanid_map
     operations = {}
     idx = 0
     for span in json_data["spans"]:
         name = span["operationName"]
         if name == "/wrk2-api/post/compose":
             continue
+        print(name)
         operations[name] = {}
         op = operations[name]
         op["idx"] = idx
@@ -59,23 +154,16 @@ def retrieve_operations(json_data):
         if op["parent"] == "/wrk2-api/post/compose":
             root = name
             #print("set rooot ", root)
-        ops.append(name)
+        #ops.append(name)
         print(name, "  ", op["idx"], "  ", op["start"],  "   ", op["end"],  "    ", op["parent"], "\n")
 
     return operations, root
 
-def get_starttime(op):
-    return operations[op]["start"]
-def get_endtime(op):
-    return operations[op]["end"]
-def get_duration(op):
-    return operations[op]["duration"]
 
-
-def create_dependency_graph(json_data, operations, root):
+def critical_path_analysis(json_data, operations, root):
     num_ops = len(operations) + 1
     print("num_ops: ", num_ops, "  roooot:   ", root, "\n")
-    graph = [[0 for i in range(num_ops)] for j in range(num_ops)]
+    #graph = [[0 for i in range(num_ops)] for j in range(num_ops)]
     global total_duration
     # Captures dependencies based on the references
     for op, data in operations.items():
@@ -152,8 +240,6 @@ def create_dependency_graph(json_data, operations, root):
         #total_duration += data["self_duration"]
 
 
-    print("\ntotal_duration: ", total_duration)
-    print("\n\n", root, "\n\n")
     total_duration += operations[root]["self_duration"]
     operations[root]["in_cp"] = 1
     dfs(operations, root)
@@ -161,48 +247,14 @@ def create_dependency_graph(json_data, operations, root):
     for op, data in operations.items():
         data["percent_dur"] = data["self_duration"] * 100 / total_duration if data["in_cp"] else 0
 
-    return graph
+def update_global_stats(json_data, operations):
+    for op_name, data in operations.items():
+        if op_name not in  omni_results:
+            omni_results[op_name] = []
+        stats = [data["duration"], data["self_duration"], data["cp_dur"], round(data["percent_dur"], 2)]
+        omni_results[op_name].append(stats)
+        if data["in_cp"]:
+            op_cnt[op_name] = op_cnt.setdefault(op_name, 0) + 1
 
-def dfs(operations, root):
-    global total_duration
-    for op in operations[root]["cp"]:
-        operations[op]["in_cp"] = 1
-        print(op,  " ", operations[op]["self_duration"], " ", total_duration)
-        total_duration += operations[op]["self_duration"]
-        dfs(operations, op)
-
-
-def print_dependency_graph(graph):
-    print("Dependency graph: \n")
-    i = 0
-    j = 0
-
-    for i in range(len(spanid_map)):
-        print(i, ":   ", end='')
-        for j in range(len(spanid_map)):
-            print(graph[i][j],"  ", end = '')
-        print("     ", ops[i], "\n")
-
-
-
-
-def print_ops_duration(operations):
-    print("\n\n")
-    t = PrettyTable(['OperationName', 'SelfDuration', 'TotalDuration', 'Percentage'])
-    t.sortby = 'Percentage'
-    t.reversesort=True
-    for op, data in operations.items():
-        t.add_row([op, data["self_duration"], data["duration"], round(data["percent_dur"], 2)])
-        #print(op, "   self:  ", data["self_duration"] , "    Total: ", data["duration"], "    percentage: " , data["percent_dur"])
-    print(t)
-
-
-json_data = file_to_json(filename)
-spanid_to_opname(json_data)
-print_contents(spanid_map)
-operations, root = retrieve_operations(json_data)
-graph = create_dependency_graph(json_data, operations, root)
-print_operations(operations)
-#print_dependency_graph(graph)
-print_ops_duration(operations)
-
+#analyze_trace("04b70754a177e5c0.json")
+analyze_traces()
