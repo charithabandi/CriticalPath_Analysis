@@ -1,0 +1,10 @@
+.bash_logout
+.bashrc
+.cache/
+.forward
+.gitconfig
+.kshrc
+.local/
+.profile
+.ssh/
+.viminfo

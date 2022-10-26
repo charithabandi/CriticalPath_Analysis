@@ -1,0 +1,273 @@
+compose_unique_id_client:  0611b14584476012
+compose_creator_client:  1b3c5e3cb8f7ce51
+compose_media_client:  10b75ba9549590e1
+compose_creator_client:  049d8610b90c4418
+compose_media_client:  1f687373fe45487b
+compose_media_client:  2d06eee5974ad49d
+compose_creator_client:  2fc1c61b58d13dac
+compose_media_client:  148febf69a40a65e
+compose_media_client:  066508a234930554
+compose_creator_client:  202e97eb0688a548
+compose_media_client:  2164dbd695519f50
+compose_creator_client:  24732ffe0988a8cd
+compose_media_client:  0d26483de2e896ec
+compose_unique_id_client:  2660fdca4a293587
+compose_unique_id_client:  3209a01a079794be
+compose_unique_id_client:  0fc4959ad44ad645
+compose_media_client:  06ff6891c6b6f767
+compose_unique_id_client:  0cf363038f6d53fc
+compose_media_client:  1412aab0fb6548fe
+
+
+
+
+30
+compose_user_mentions_client : { 
+        cnt:  11984 
+        Mean:   523.1017189586115 
+        Median:  440.0 
+        Mode:   390 
+        Min:   279 
+        Max:   34632 
+}
+compose_urls_client : { 
+        cnt:  11984 
+        Mean:   725.7034379172229 
+        Median:  647.0 
+        Mode:   563 
+        Min:   385 
+        Max:   12589 
+}
+compose_text_server : { 
+        cnt:  11984 
+        Mean:   1464.3770861148198 
+        Median:  1320.0 
+        Mode:   1195 
+        Min:   803 
+        Max:   35226 
+}
+compose_media_client : { 
+        cnt:  11984 
+        Mean:   182.06141522029372 
+        Median:  143.0 
+        Mode:   136 
+        Min:   87 
+        Max:   4303 
+}
+compose_unique_id_client : { 
+        cnt:  11984 
+        Mean:   179.11048064085446 
+        Median:  142.0 
+        Mode:   136 
+        Min:   89 
+        Max:   5093 
+}
+compose_text_client : { 
+        cnt:  11984 
+        Mean:   1679.0039218958611 
+        Median:  1497.0 
+        Mode:   1368 
+        Min:   914 
+        Max:   35796 
+}
+store_post_client : { 
+        cnt:  11984 
+        Mean:   547.3798397863818 
+        Median:  471.0 
+        Mode:   453 
+        Min:   310 
+        Max:   33718 
+}
+write_user_timeline_client : { 
+        cnt:  11984 
+        Mean:   753.9146361815755 
+        Median:  683.0 
+        Mode:   599 
+        Min:   463 
+        Max:   29825 
+}
+write_home_timeline_client : { 
+        cnt:  11984 
+        Mean:   1536.759929906542 
+        Median:  1246.0 
+        Mode:   1141 
+        Min:   392 
+        Max:   34849 
+}
+compose_post_server : { 
+        cnt:  11984 
+        Mean:   5140.944425901202 
+        Median:  4523.0 
+        Mode:   4042 
+        Min:   2549 
+        Max:   57345 
+}
+compose_creator_client : { 
+        cnt:  11984 
+        Mean:   181.8724966622163 
+        Median:  140.0 
+        Mode:   131 
+        Min:   88 
+        Max:   5091 
+}
+compose_unique_id_server : { 
+        cnt:  11984 
+        Mean:   12.943257676902537 
+        Median:  13.0 
+        Mode:   13 
+        Min:   7 
+        Max:   659 
+}
+post_storage_mongo_insert_client : { 
+        cnt:  11984 
+        Mean:   331.43900200267024 
+        Median:  294.0 
+        Mode:   281 
+        Min:   190 
+        Max:   24372 
+}
+store_post_server : { 
+        cnt:  11984 
+        Mean:   365.9662049399199 
+        Median:  327.0 
+        Mode:   315 
+        Min:   213 
+        Max:   24412 
+}
+write_user_timeline_mongo_insert_client : { 
+        cnt:  11984 
+        Mean:   417.55582443257674 
+        Median:  395.0 
+        Mode:   406 
+        Min:   261 
+        Max:   5645 
+}
+write_user_timeline_redis_update_client : { 
+        cnt:  11984 
+        Mean:   139.6267523364486 
+        Median:  110.0 
+        Mode:   102 
+        Min:   55 
+        Max:   4607 
+}
+write_user_timeline_server : { 
+        cnt:  11984 
+        Mean:   604.0411381842457 
+        Median:  556.0 
+        Mode:   579 
+        Min:   374 
+        Max:   5970 
+}
+compose_user_mentions_memcached_get_client : { 
+        cnt:  11984 
+        Mean:   334.9002837116155 
+        Median:  276.0 
+        Mode:   244 
+        Min:   168 
+        Max:   33992 
+}
+compose_user_mentions_server : { 
+        cnt:  11984 
+        Mean:   360.7964786381842 
+        Median:  302.0 
+        Mode:   267 
+        Min:   184 
+        Max:   34024 
+}
+get_followers_client : { 
+        cnt:  11984 
+        Mean:   334.79906542056074 
+        Median:  286.0 
+        Mode:   256 
+        Min:   151 
+        Max:   5363 
+}
+write_home_timeline_redis_update_client : { 
+        cnt:  11984 
+        Mean:   984.4125500667557 
+        Median:  732.0 
+        Mode:   430 
+        Min:   90 
+        Max:   18658 
+}
+write_home_timeline_server : { 
+        cnt:  11984 
+        Mean:   1361.81608811749 
+        Median:  1093.5 
+        Mode:   752 
+        Min:   292 
+        Max:   19308 
+}
+social_graph_redis_get_client : { 
+        cnt:  11984 
+        Mean:   163.3124165554072 
+        Median:  132.0 
+        Mode:   120 
+        Min:   56 
+        Max:   5174 
+}
+get_followers_server : { 
+        cnt:  11984 
+        Mean:   187.7378170894526 
+        Median:  155.0 
+        Mode:   140 
+        Min:   70 
+        Max:   5190 
+}
+url_mongo_insert_client : { 
+        cnt:  11984 
+        Mean:   383.38459612817087 
+        Median:  356.0 
+        Mode:   342 
+        Min:   200 
+        Max:   12312 
+}
+compose_urls_server : { 
+        cnt:  11984 
+        Mean:   546.476134846462 
+        Median:  485.0 
+        Mode:   426 
+        Min:   276 
+        Max:   12456 
+}
+compose_creator_server : { 
+        cnt:  11984 
+        Mean:   6.736565420560748 
+        Median:  7.0 
+        Mode:   7 
+        Min:   4 
+        Max:   80 
+}
+compose_media_server : { 
+        cnt:  11984 
+        Mean:   8.112566755674232 
+        Median:  8.0 
+        Mode:   8 
+        Min:   4 
+        Max:   503 
+}
+compose_post_client : { 
+        cnt:  11935 
+        Mean:   5531.600083787181 
+        Median:  4865 
+        Mode:   4800 
+        Min:   2735 
+        Max:   75841 
+}
+/wrk2-api/post/compose : { 
+        cnt:  23868 
+        Mean:   5955.683802580861 
+        Median:  5312.0 
+        Mode:   4491 
+        Min:   2830 
+        Max:   76528 
+}
+Cnt dictionary
+
+
+compose_urls_client  :  10652
+compose_text_client  :  11965
+compose_user_mentions_client  :  1332
+compose_unique_id_client  :  5
+compose_creator_client  :  5
+compose_media_client  :  9
