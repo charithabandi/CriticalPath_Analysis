@@ -251,7 +251,7 @@ def update_global_stats(json_data, operations):
     for op_name, data in operations.items():
         if op_name not in  omni_results:
             omni_results[op_name] = []
-        stats = [data["duration"], data["self_duration"], data["cp_dur"], round(data["percent_dur"], 2)]
+        stats = {"total_duration": data["duration"], "self_duration": data["self_duration"], "cp_duration": data["cp_dur"], "percent_duration": round(data["percent_dur"], 2)]
         omni_results[op_name].append(stats)
         if data["in_cp"]:
             op_cnt[op_name] = op_cnt.setdefault(op_name, 0) + 1

@@ -4,6 +4,9 @@ import os
 import json
 import glob
 from prettytable import PrettyTable
+import matplotlib.pyplot as plt
+
+
 
 filename = "2d93fdbc8ec71efe.json"
 ############################################### UTILS ########################
@@ -83,6 +86,12 @@ def dump_omni_results():
     with open(filepath, 'w') as file:
         json_string = json.dumps(omni_results, default=lambda o: o.__dict__, indent=4)
         file.write(json_string)
+
+    filepath = "/users/chbandi/traces/opcnt_results.json"
+    with open(filepath, 'w') as file:
+        json_string = json.dumps(op_cnt, default=lambda o: o.__dict__, indent=4)
+        file.write(json_string)
+
 ################################################## 
 
 spanid_map = {}
@@ -251,10 +260,20 @@ def update_global_stats(json_data, operations):
     for op_name, data in operations.items():
         if op_name not in  omni_results:
             omni_results[op_name] = []
-        stats = [data["duration"], data["self_duration"], data["cp_dur"], round(data["percent_dur"], 2)]
+        stats = {"total_duration": data["duration"], "self_duration": data["self_duration"], "cp_duration": data["cp_dur"], "percent_duration": round(data["percent_dur"], 2)}
         omni_results[op_name].append(stats)
         if data["in_cp"]:
             op_cnt[op_name] = op_cnt.setdefault(op_name, 0) + 1
+        else:
+            op_cnt[op_name] = op_cnt.setdefault(op_name, 0)
+        print(op_name, " ", op_cnt[op_name])
 
-#analyze_trace("04b70754a177e5c0.json")
-analyze_traces()
+
+
+def lets_plot_graphs():
+    #plt.bar(list(op_cnt.keys()), op_cnt.values(), color='g')
+    pass
+
+analyze_trace("04b70754a177e5c0.json")
+#analyze_traces()
+print_op_cnts()
