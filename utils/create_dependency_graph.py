@@ -6,6 +6,12 @@ import glob
 from prettytable import PrettyTable
 
 filename = "2d93fdbc8ec71efe.json"
+compose_posts = "/wrk2-api/post/compose"
+home_timeline_read = "/wrk2-api/home-timeline/read"
+user_timeline_read = "/wrk2-api/user-timeline/read"
+follow_user = "/wrk2-api/user/follow"
+register_user = "/wrk2-api/user/register"
+
 ############################################### UTILS ########################
 def file_to_json(filename):
     with open(filename, "rb") as f:
@@ -78,11 +84,45 @@ def print_op_cnts():
         t.add_row([op_name, cnt])
     print(t, "\n\n")
 
+def finalstats():
+    for key, data in omni_results.items():
+	final_stats[key] = {}
+	final_stats[key]["mean_total_duration"] = statistics.mean(d["total_duration"] for d in data)
+	final_stats[key]["min_total_duration"] = statistics.min(d["total_duration"] for d in data)
+	final_stats[key]["max_total_duration"] = statistics.max(d["total_duration"] for d in data)
+
+	final_stats[key]["mean_self_duration"] = statistics.mean(d["self_duration"] for d in data)
+	final_stats[key]["min_self_duration"] = statistics.min(d["self_duration"] for d in data)
+	final_stats[key]["max_self_duration"] = statistics.max(d["self_duration"] for d in data)
+
+	final_stats[key]["mean_cp_duration"] = statistics.mean(d["cp_duration"] for d in data)
+	final_stats[key]["min_cp_duration"] = statistics.min(d["cp_duration"] for d in data)
+	final_stats[key]["max_cp_duration"] = statistics.max(d["cp_duration"] for d in data)
+
+	final_stats[key]["mean_percent_duration"] = statistics.mean(d["percent_duration"] for d in data)
+	final_stats[key]["mean_percent_duration"] = statistics.min(d["percent_duration"] for d in data)
+	final_stats[key]["mean_percent_duration"] = statistics.max(d["percent_duration"] for d in data)
+
+	final_stats[key]["in_cp_count"] = op_cnt["key"]
+
+
+
 def dump_omni_results():
-    filepath = "/users/chbandi/traces/omni_result.json"
+    filepath = "/users/chbandi/traces/omni_results.json"
     with open(filepath, 'w') as file:
         json_string = json.dumps(omni_results, default=lambda o: o.__dict__, indent=4)
         file.write(json_string)
+
+    filepath = "/users/chbandi/traces/finalstats.json"
+    with open(filepath, 'w') as file:
+        json_string = json.dumps(op_cnt, default=lambda o: o.__dict__, indent=4)
+        file.write(json_string)
+
+def is_ngx_server(name):
+    if name in [compose_posts, home_timeline_read, user_timeline_read, register_user, follow_user]:
+        return True
+    return False
+
 ################################################## 
 
 spanid_map = {}
@@ -93,7 +133,7 @@ operations = {}
 omni_results = {}
 op_cnt = {}
 skip = 0
-
+final_stats = {}
 
 def analyze_trace(filename):
     global skip, operations
@@ -111,6 +151,8 @@ def analyze_trace(filename):
     operations, root = retrieve_operations(json_data)
 
     #Critical path analysis
+    if root == "":
+        return 
     critical_path_analysis(json_data, operations, root)
     update_global_stats(json_data, operations)
     print_operations(operations)
@@ -128,12 +170,13 @@ def analyze_traces():
     dump_omni_results()
 
 def retrieve_operations(json_data):
-    global operations, spanid_map
+    global operations, spanid_map, root
     operations = {}
     idx = 0
+    root = ""
     for span in json_data["spans"]:
         name = span["operationName"]
-        if name == "/wrk2-api/post/compose":
+        if is_ngx_server(name):
             continue
         print(name)
         operations[name] = {}
@@ -151,7 +194,7 @@ def retrieve_operations(json_data):
         else:
             op["parent"] = None
         #print(name, " ", op["parent"])
-        if op["parent"] == "/wrk2-api/post/compose":
+        if is_ngx_server(op["parent"]):
             root = name
             #print("set rooot ", root)
         #ops.append(name)
@@ -169,7 +212,7 @@ def critical_path_analysis(json_data, operations, root):
     for op, data in operations.items():
         if data["parent"] is not None:
             parent = data["parent"]
-            if parent == '/wrk2-api/post/compose':
+            if is_ngx_server(parent):
                 continue
             parent_idx = operations[parent]["idx"]
             child_idx = data["idx"]
@@ -251,7 +294,7 @@ def update_global_stats(json_data, operations):
     for op_name, data in operations.items():
         if op_name not in  omni_results:
             omni_results[op_name] = []
-        stats = {"total_duration": data["duration"], "self_duration": data["self_duration"], "cp_duration": data["cp_dur"], "percent_duration": round(data["percent_dur"], 2)]
+        stats = {"total_duration": data["duration"], "self_duration": data["self_duration"], "cp_duration": data["cp_dur"], "percent_duration": round(data["percent_dur"], 2)}
         omni_results[op_name].append(stats)
         if data["in_cp"]:
             op_cnt[op_name] = op_cnt.setdefault(op_name, 0) + 1

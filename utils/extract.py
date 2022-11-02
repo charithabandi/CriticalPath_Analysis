@@ -4,7 +4,7 @@ import os
 import json
 import requests
 
-JAEGER_TRACES_ENDPOINT = "http://128.110.218.82:16686/api/traces?limit=20000&"
+JAEGER_TRACES_ENDPOINT = "http://128.110.218.82:16686/api/traces?limit=200000&"
 JAEGER_TRACES_PARAMS = "service="
 
 def get_traces(service):
@@ -50,6 +50,8 @@ def write_traces(directory, traces):
 
 # Pull traces for all the services & store locally as json files
 for service in get_services():
+    if service != "nginx-web-server":
+        continue
     if not os.path.exists(service):
         os.makedirs(service)
     traces = get_traces(service)
