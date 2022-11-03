@@ -4,6 +4,7 @@ import os
 import json
 import glob
 from prettytable import PrettyTable
+import statistics
 
 filename = "2d93fdbc8ec71efe.json"
 compose_posts = "/wrk2-api/post/compose"
@@ -71,51 +72,69 @@ def spanid_to_opname(json_data):
 
 
 def dfs(operations, root):
-    global total_duration
+    global total_duration, cp
+    if cp == "":
+        cp = root
+    else:
+        cp = cp + " -> " + root
+
     for op in operations[root]["cp"]:
         operations[op]["in_cp"] = 1
+        operations[op]["not_in_cp"] = 0
         print(op,  " ", operations[op]["self_duration"], " ", total_duration)
         total_duration += operations[op]["self_duration"]
         dfs(operations, op)
 
 def print_op_cnts():
-    t = PrettyTable(['OperationName', 'Count'])
+    t = PrettyTable(['OperationName', 'In CP Count', 'Not In CP Count', '#Traces'])
     for op_name, cnt in op_cnt.items():
-        t.add_row([op_name, cnt])
+        t.add_row([op_name, cnt[0], cnt[1], cnt[0] + cnt[1]])
     print(t, "\n\n")
 
 def finalstats():
     for key, data in omni_results.items():
-	final_stats[key] = {}
-	final_stats[key]["mean_total_duration"] = statistics.mean(d["total_duration"] for d in data)
-	final_stats[key]["min_total_duration"] = statistics.min(d["total_duration"] for d in data)
-	final_stats[key]["max_total_duration"] = statistics.max(d["total_duration"] for d in data)
+        final_stats[key] = {}
+        final_stats[key]["mean_total_duration"] = round(statistics.mean(d["total_duration"] for d in data), 2)
+        final_stats[key]["min_total_duration"] = min(d["total_duration"] for d in data)
+        final_stats[key]["max_total_duration"] = max(d["total_duration"] for d in data)
 
-	final_stats[key]["mean_self_duration"] = statistics.mean(d["self_duration"] for d in data)
-	final_stats[key]["min_self_duration"] = statistics.min(d["self_duration"] for d in data)
-	final_stats[key]["max_self_duration"] = statistics.max(d["self_duration"] for d in data)
+        final_stats[key]["mean_self_duration"] = round(statistics.mean(d["self_duration"] for d in data), 2)
+        final_stats[key]["min_self_duration"] = min(d["self_duration"] for d in data)
+        final_stats[key]["max_self_duration"] = max(d["self_duration"] for d in data)
 
-	final_stats[key]["mean_cp_duration"] = statistics.mean(d["cp_duration"] for d in data)
-	final_stats[key]["min_cp_duration"] = statistics.min(d["cp_duration"] for d in data)
-	final_stats[key]["max_cp_duration"] = statistics.max(d["cp_duration"] for d in data)
+        final_stats[key]["mean_cp_duration"] = round(statistics.mean(d["cp_duration"] for d in data),2)
+        final_stats[key]["min_cp_duration"] = min(d["cp_duration"] for d in data)
+        final_stats[key]["max_cp_duration"] = max(d["cp_duration"] for d in data)
 
-	final_stats[key]["mean_percent_duration"] = statistics.mean(d["percent_duration"] for d in data)
-	final_stats[key]["mean_percent_duration"] = statistics.min(d["percent_duration"] for d in data)
-	final_stats[key]["mean_percent_duration"] = statistics.max(d["percent_duration"] for d in data)
+        final_stats[key]["mean_percent_duration"] = round(statistics.mean(d["percent_duration"] for d in data), 2)
+        final_stats[key]["mean_percent_duration"] = min(d["percent_duration"] for d in data)
+        final_stats[key]["mean_percent_duration"] = max(d["percent_duration"] for d in data)
 
-	final_stats[key]["in_cp_count"] = op_cnt["key"]
-
+        final_stats[key]["in_cp_count"] = op_cnt[key][0]
+        final_stats[key]["not_in_cp_count"] = op_cnt[key][1]
+        final_stats[key]["total_apprearences"] = op_cnt[key][0] + op_cnt[key][1]
 
 
 def dump_omni_results():
-    filepath = "/users/chbandi/traces/omni_results.json"
+    finalstats()
+    filepath = "/users/chbandi/omni_results.json"
     with open(filepath, 'w') as file:
         json_string = json.dumps(omni_results, default=lambda o: o.__dict__, indent=4)
         file.write(json_string)
 
-    filepath = "/users/chbandi/traces/finalstats.json"
+    filepath = "/users/chbandi/finalstats.json"
     with open(filepath, 'w') as file:
-        json_string = json.dumps(op_cnt, default=lambda o: o.__dict__, indent=4)
+        json_string = json.dumps(final_stats, default=lambda o: o.__dict__, indent=4)
+        file.write(json_string)
+
+    filepath = "/users/chbandi/totalDuration.json"
+    with open(filepath, 'w') as file:
+        json_string = json.dumps(total_dur_list, default=lambda o: o.__dict__, indent=4)
+        file.write(json_string)
+
+    filepath = "/users/chbandi/criticalPath.json"
+    with open(filepath, 'w') as file:
+        json_string = json.dumps(criticalPath, default=lambda o: o.__dict__, indent=4)
         file.write(json_string)
 
 def is_ngx_server(name):
@@ -127,13 +146,15 @@ def is_ngx_server(name):
 
 spanid_map = {}
 #ops = []
-root = ""
-total_duration = 0
 operations = {}
 omni_results = {}
 op_cnt = {}
 skip = 0
 final_stats = {}
+total_dur_list = {}
+criticalPath = {}
+cp = ""
+traceID = ""
 
 def analyze_trace(filename):
     global skip, operations
@@ -161,19 +182,21 @@ def analyze_trace(filename):
 def analyze_traces():
     read_files = glob.glob("*.json")
     for f in read_files:
-        global spanid_map, root, total_duration
+        global spanid_map, root, total_duration, traceID
         spanid_map = {}
         root = ""
+        traceID = ""
         total_duration = 0
         analyze_trace(f)
     print_op_cnts()
     dump_omni_results()
 
 def retrieve_operations(json_data):
-    global operations, spanid_map, root
+    global operations, spanid_map, root, traceID
     operations = {}
     idx = 0
     root = ""
+    traceID = json_data["traceID"]
     for span in json_data["spans"]:
         name = span["operationName"]
         if is_ngx_server(name):
@@ -188,6 +211,7 @@ def retrieve_operations(json_data):
         op["duration"] = span["duration"]
         op["children"] = []
         op["in_cp"] = 0
+        op["not_in_cp"] = 1
         if len(span["references"]) > 0:
             parentID = span["references"][0]["spanID"]
             op["parent"] = spanid_map[parentID]
@@ -207,7 +231,7 @@ def critical_path_analysis(json_data, operations, root):
     num_ops = len(operations) + 1
     print("num_ops: ", num_ops, "  roooot:   ", root, "\n")
     #graph = [[0 for i in range(num_ops)] for j in range(num_ops)]
-    global total_duration
+    global total_duration, cp, traceID
     # Captures dependencies based on the references
     for op, data in operations.items():
         if data["parent"] is not None:
@@ -285,8 +309,20 @@ def critical_path_analysis(json_data, operations, root):
 
     total_duration += operations[root]["self_duration"]
     operations[root]["in_cp"] = 1
+    operations[root]["not_in_cp"] = 0
+    cp = ""
     dfs(operations, root)
+    print("\n CriticalPath:  ",cp, "\n") 
     print("\ntotal_duration: ", total_duration)
+    if root not in total_dur_list:
+        total_dur_list[root] = []
+    total_dur_list[root].append(total_duration)
+    if cp in criticalPath:
+        criticalPath[cp][0] = criticalPath[cp][0] + 1
+    else:
+        criticalPath[cp] = [1, traceID]
+
+
     for op, data in operations.items():
         data["percent_dur"] = data["self_duration"] * 100 / total_duration if data["in_cp"] else 0
 
@@ -294,10 +330,13 @@ def update_global_stats(json_data, operations):
     for op_name, data in operations.items():
         if op_name not in  omni_results:
             omni_results[op_name] = []
+            op_cnt[op_name] = [0,0]
         stats = {"total_duration": data["duration"], "self_duration": data["self_duration"], "cp_duration": data["cp_dur"], "percent_duration": round(data["percent_dur"], 2)}
         omni_results[op_name].append(stats)
         if data["in_cp"]:
-            op_cnt[op_name] = op_cnt.setdefault(op_name, 0) + 1
+            op_cnt[op_name][0] = op_cnt[op_name][0] + 1
+        if data["not_in_cp"]:
+            op_cnt[op_name][1] = op_cnt[op_name][1] + 1
 
 #analyze_trace("04b70754a177e5c0.json")
 analyze_traces()
